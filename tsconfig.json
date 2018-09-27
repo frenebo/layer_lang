@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "charset": "utf8",
+    "strict": true,
+    "strictNullChecks": true,
+    "noUnusedParameters": false
+  }
+}

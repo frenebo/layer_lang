@@ -1,0 +1,13 @@
+<html>
+<head>
+  <script src="./dependencies/ace-src/ace.js"></script>
+  <script type="module" src="./scripts/main.js"></script>
+</head>
+<body>
+  <div id="maindiv"></div>
+  <script type="module">
+    import { run } from "./scripts/main.js";
+    run(document.getElementById("maindiv"));
+  </script>
+</body>
+</html>
