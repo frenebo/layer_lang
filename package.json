@@ -12,7 +12,7 @@
     "@types/ace": "0.0.40",
     "ace-builds": "^1.4.1",
     "del": "^3.0.0",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.0",
     "gulp-typescript": "^5.0.0-alpha.3",
     "gulp-webserver": "^0.9.1",
     "typescript": "^3.0.3"
