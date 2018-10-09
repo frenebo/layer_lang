@@ -12,6 +12,7 @@ export enum TokenName {
   statement_sequence = "statement_sequence",
   statement = "statement",
   expression = "expression",
+  atom = "atom",
   assignment = "assignment",
   block = "block",
   keyword_while = "keyword_while",
@@ -19,8 +20,12 @@ export enum TokenName {
   close_parenthesis = "close_parenthesis",
   open_parenthesis = "open_parenthesis",
   operator_expression = "operator_expression",
-  operator = "operator",
-  plus_sign = "plus_sign"
+  plus_sign = "plus_sign",
+  minus_sign = "minus_sign",
+  forward_slash = "forward_slash",
+  asterisk = "asterisk",
+  operator_suffix = "operator_suffix",
+  operator = "operator"
 };
 
 const wordCheckRegexes: Array<[TokenName, RegExp]>= [
@@ -35,6 +40,9 @@ const wordCheckRegexes: Array<[TokenName, RegExp]>= [
   [TokenName.open_brace, /^\{/],
   [TokenName.close_brace, /^\}/],
   [TokenName.plus_sign, /^\+/],
+  [TokenName.minus_sign, /^\-/],
+  [TokenName.forward_slash, /^\//],
+  [TokenName.asterisk, /^\*/],
   [TokenName.identifier, /^[a-zA-Z_][a-zA-Z0-9_]*/],
   [TokenName.literal_number, /^[0-9]*\.?[0-9]+/],
 ];
