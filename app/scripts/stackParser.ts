@@ -28,13 +28,13 @@ export function parseProgram(tokens: Token[]) {
   const withoutWhitespace = removeWhitespace(tokens);
   const state: ParseState = {
     current: newTentativeParseNode(TokenName.statement_sequence),
-    tokens: tokens,
+    tokens: withoutWhitespace,
   };
   let done = false;
   while (!done) {
     done = parse(state);
   }
-  const parsed = tentativeToParseNode(state.current);
+  return tentativeToParseNode(state.current);
 }
 
 function newTentativeParseNode(ruleName: TokenName, parent?: TentativeParseNode, parentOption?: TentativeOption) {
@@ -77,7 +77,7 @@ type ParseState = {
 
 function tentativeToParseNode(tentative: TentativeParseNode): ParseNode | null {
   let longestNode: ParseNode | null = null;
-  let longestConsumed: number | null = null;
+  let longestConsumed = 0;
   for (const option of tentative.options) {
     if (option.parsing !== null || option.toParse.length !== 0) {
       throw new Error("Can't convert incomplete node");
@@ -87,7 +87,7 @@ function tentativeToParseNode(tentative: TentativeParseNode): ParseNode | null {
       definition: option.parsed,
       consumed: option.consumed,
     };
-    if (longestNode === null || option.consumed > longestConsumed!) {
+    if (longestNode === null || option.consumed > longestConsumed) {
       longestNode = newNode;
       longestConsumed = option.consumed;
     }

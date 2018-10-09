@@ -10,7 +10,7 @@ export type ParseNode = {
 
 
 
-export function parseProgram(tokens: Token[]) {
+export function oldParseProgram(tokens: Token[]) {
   const withoutWhitespace = removeWhitespace(tokens);
   const results = parse(generateLeftMostTable(rules), tokensToNodes(withoutWhitespace), 0, TokenName.statement_sequence);
   if (results === null) throw new Error("Could not parse");

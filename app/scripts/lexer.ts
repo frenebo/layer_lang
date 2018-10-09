@@ -25,13 +25,16 @@ export enum TokenName {
   forward_slash = "forward_slash",
   asterisk = "asterisk",
   operator_suffix = "operator_suffix",
-  operator = "operator"
+  operator = "operator",
+  if_block = "if_block",
+  keyword_if = "keyword_if"
 };
 
 const wordCheckRegexes: Array<[TokenName, RegExp]>= [
   [TokenName.keyword_assign, /^assign/],
   [TokenName.keyword_while, /^while/],
   [TokenName.keyword_of, /^of/],
+  [TokenName.keyword_if, /^if/],
   [TokenName.equals_sign, /^\=/],
   [TokenName.semicolon, /^\;/],
   [TokenName.open_parenthesis, /^\(/],

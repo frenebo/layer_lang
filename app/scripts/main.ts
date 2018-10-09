@@ -1,5 +1,4 @@
-// import { tokenize, removeWhitespace, TokenName } from "./lexer.js";
-import { parseProgram } from "./parser.js";
+import { parseProgram } from "./stackParser.js";
 import { lex } from "./lexer.js";
 
 export function run(div: HTMLElement): void {
@@ -20,10 +19,7 @@ export function run(div: HTMLElement): void {
   runButton.innerText = "run";
   runButton.onclick = () => setTimeout(() => {
     const code = editor.getValue();
-    // console.log(lex(code));
     console.log(parseProgram(lex(code)));
-    // const nodes = tokenize(code);
-    // console.log(parseProgram(nodes));
   }, 0);
   // editor.session.setMode("ace/mode/javascript");
 }

@@ -16,6 +16,7 @@ export const rules: { [key in TokenName]?: TokenName[][]} = {
   ],
   [TokenName.statement]: [
     [TokenName.while_loop],
+    [TokenName.if_block],
     [TokenName.expression, TokenName.semicolon],
   ],
   [TokenName.block]: [[TokenName.open_brace, TokenName.statement_sequence, TokenName.close_brace]],
@@ -32,6 +33,7 @@ export const rules: { [key in TokenName]?: TokenName[][]} = {
   ],
   [TokenName.assignment]: [[TokenName.identifier, TokenName.equals_sign, TokenName.expression]],
   [TokenName.while_loop]: [[TokenName.keyword_while, TokenName.open_parenthesis, TokenName.expression, TokenName.close_parenthesis, TokenName.block]],
+  [TokenName.if_block]: [[TokenName.keyword_if, TokenName.open_parenthesis, TokenName.expression, TokenName.close_parenthesis, TokenName.block]],
   // order of operations
   [TokenName.operator_suffix]: [
     [TokenName.operator, TokenName.expression],
