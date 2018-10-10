@@ -30,7 +30,7 @@ export const rules: {
     atom_with_op_suffix: [TokenName.atom, TokenName.operator_suffix],
   },
   operator_suffix: {
-    with_suff: [TokenName.operator, TokenName.expression],
+    with_stuff: [TokenName.operator, TokenName.expression],
     empty: [],
   },
   atom: {

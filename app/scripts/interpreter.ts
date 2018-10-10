@@ -161,7 +161,7 @@ function executeExpression(expression: ParseNode, scope: Scope): ExpressionValue
   const operators: ParseNode[] = [];
 
   let op_suffix = expression.contents[1] as ParseNode;
-  while (op_suffix.definition_name === "with_suff") {
+  while (op_suffix.definition_name === "with_stuff") {
     const operator = op_suffix.contents[0] as ParseNode;
     const expression = op_suffix.contents[1] as ParseNode;
     const atom = evaluateAtom(expression.contents[0] as ParseNode, scope);
@@ -181,7 +181,7 @@ function executeExpression(expression: ParseNode, scope: Scope): ExpressionValue
 
   for (const opNames of orderOfOperations) {
     for (let i = 0; i < operators.length; i++) {
-      if (operators[i].definition_name! in opNames) {
+      if (opNames.indexOf(operators[i].definition_name!) !== -1) {
         const [exp1, exp2] = expressions.splice(i, 2);
         const operator = operators.splice(i, 1)[0];
 

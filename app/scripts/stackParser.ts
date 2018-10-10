@@ -97,7 +97,6 @@ function tentativeToParseNode(tentative: TentativeParseNode): ParseNode | null {
 }
 
 function parse(state: ParseState): boolean {
-  console.log(state.current.name);
   if (state.current.currentOptionIdx >= state.current.options.length) {
     if (state.current.parent === undefined) {
       return true;
