@@ -211,7 +211,7 @@ function calculateOperation(input_exp1: ExpressionValue, op_name: string, input_
 
   function plus(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
     if (exp1.type === "number" && exp2.type === "number") {
-      return {type: "number", value: exp1.value/exp2.value};
+      return {type: "number", value: exp1.value + exp2.value};
     } else if (
       (exp1.type === "number" && exp2.type === "string") ||
       (exp1.type === "string" && exp2.type === "number") ||
