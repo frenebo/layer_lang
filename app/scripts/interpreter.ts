@@ -81,9 +81,7 @@ function executeWhileLoop(loop: ParseNode, scope: Scope) {
 
   const block = loop.contents[4] as ParseNode;
 
-  let condition_exp_truth = false;
-
-  while (!(isTruth(executeExpression(condition_expression, scope)))) {
+  while (isTruth(executeExpression(condition_expression, scope))) {
     executeBlock(block, scope);
   }
 }
