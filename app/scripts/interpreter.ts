@@ -135,7 +135,7 @@ function executeForLoop(forNode: ParseNode, parent_scope: Scope) {
 function assignInScope(name: string, expVal: ExpressionValue, scope: Scope) {
   let searchScope: Scope | null = scope;
   while (searchScope !== null) {
-    if (scope.values[name] === undefined) {
+    if (searchScope.values[name] === undefined) {
       searchScope = searchScope.parent_scope;
     } else {
       searchScope.values[name] = expVal;
