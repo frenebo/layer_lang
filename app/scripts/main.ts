@@ -1,5 +1,6 @@
 import { parseProgram } from "./stackParser.js";
 import { lex } from "./lexer.js";
+import { executeProgram } from "./interpreter.js";
 
 export function run(div: HTMLElement): void {
 
@@ -19,7 +20,12 @@ export function run(div: HTMLElement): void {
   runButton.innerText = "run";
   runButton.onclick = () => setTimeout(() => {
     const code = editor.getValue();
-    console.log(parseProgram(lex(code)));
+    const tokens = lex(code);
+    const parse_node = parseProgram(tokens);
+
+    if (parse_node !== null) executeProgram(parse_node!);
+    else throw new Error("Couldn't parse program");
+
   }, 0);
   // editor.session.setMode("ace/mode/javascript");
 }

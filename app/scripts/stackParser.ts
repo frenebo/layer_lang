@@ -1,21 +1,21 @@
 import { TokenName, removeWhitespace, Token } from "./lexer.js";
-import { generateLeftMostTable } from "./utils.js";
 import { rules } from "./rules.js";
-
 
 export type ParseNode = {
   name: TokenName,
-  definition: Array<ParseNode> | string,
-  // startIdx: number,
+  contents: Array<ParseNode> | string,
+  definition_name: string | null,
   consumed: number,
 };
 
 type TentativeOption = {
+  definition_name: string,
   consumed: number,
   parsed: ParseNode[],
   parsing: TentativeParseNode | null | TokenName,
   toParse: TokenName[],
 };
+
 type TentativeParseNode = {
   name: TokenName,
   parent?: TentativeParseNode,
@@ -34,7 +34,14 @@ export function parseProgram(tokens: Token[]) {
   while (!done) {
     done = parse(state);
   }
-  return tentativeToParseNode(state.current);
+  // may not use all tokens! @WARNING @TODO fix
+  const parseNode = tentativeToParseNode(state.current);
+
+  if (parseNode === null) throw new Error("Could not parse anything");
+
+  if (parseNode.consumed < withoutWhitespace.length) throw new Error("Couldn't parse all tokens");
+
+  return parseNode;
 }
 
 function newTentativeParseNode(ruleName: TokenName, parent?: TentativeParseNode, parentOption?: TentativeOption) {
@@ -49,26 +56,18 @@ function newTentativeParseNode(ruleName: TokenName, parent?: TentativeParseNode,
     options: [],
   };
 
-  for (const definition of definitions) {
+  for (const definitionName in definitions) {
     tentativeNode.options.push({
+      definition_name: definitionName,
       consumed: 0,
       parsed: [],
       parsing: null,
-      toParse: definition.slice(),
+      toParse: definitions[definitionName].slice(),
     });
   }
 
   return tentativeNode;
 }
-
-/*
-  parse node is full -> go to parent
-  parse node is not full ->
-    option is full -> go to next option
-    option is not full ->
-      currently parsing something -> make into a full node
-      not currently parsing something -> make next toParse the currently parsing
-*/
 
 type ParseState = {
   current: TentativeParseNode;
@@ -83,8 +82,9 @@ function tentativeToParseNode(tentative: TentativeParseNode): ParseNode | null {
       throw new Error("Can't convert incomplete node");
     }
     const newNode: ParseNode = {
+      definition_name: option.definition_name,
       name: tentative.name,
-      definition: option.parsed,
+      contents: option.parsed,
       consumed: option.consumed,
     };
     if (longestNode === null || option.consumed > longestConsumed) {
@@ -97,6 +97,7 @@ function tentativeToParseNode(tentative: TentativeParseNode): ParseNode | null {
 }
 
 function parse(state: ParseState): boolean {
+  console.log(state.current.name);
   if (state.current.currentOptionIdx >= state.current.options.length) {
     if (state.current.parent === undefined) {
       return true;
@@ -104,40 +105,41 @@ function parse(state: ParseState): boolean {
       state.current = state.current.parent;
     }
   } else {
-    const option = state.current.options[state.current.currentOptionIdx];
+    const currentOption = state.current.options[state.current.currentOptionIdx];
 
-    if (option.parsing !== null) {
-      if (typeof option.parsing === "object") {
-        const getParseNode = tentativeToParseNode(option.parsing);
+    if (currentOption.parsing !== null) {
+      if (typeof currentOption.parsing === "object") {
+        const getParseNode = tentativeToParseNode(currentOption.parsing);
         if (getParseNode === null) {
           state.current.options.splice(state.current.currentOptionIdx, 1);
         } else {
-          option.parsed.push(getParseNode);
-          option.consumed += getParseNode.consumed;
-          option.parsing = null;
+          currentOption.parsed.push(getParseNode);
+          currentOption.consumed += getParseNode.consumed;
+          currentOption.parsing = null;
         }
       } else {
-        const nextToken: Token | undefined = state.tokens[state.current.startIdx + option.consumed];
-        if (nextToken === undefined || nextToken.name !== option.parsing) {
+        const nextToken: Token | undefined = state.tokens[state.current.startIdx + currentOption.consumed];
+        if (nextToken === undefined || nextToken.name !== currentOption.parsing) {
           state.current.options.splice(state.current.currentOptionIdx, 1);
         } else {
-          option.parsed.push({
-            name: option.parsing,
-            definition: nextToken.text,
+          currentOption.parsed.push({
+            definition_name: null,
+            name: currentOption.parsing,
+            contents: nextToken.text,
             consumed: 1,
           });
-          option.consumed += 1;
-          option.parsing = null;
+          currentOption.consumed += 1;
+          currentOption.parsing = null;
         }
       }
     } else {
-      const nextToParse = option.toParse.shift()
+      const nextToParse = currentOption.toParse.shift()
       if (nextToParse !== undefined) {
         if (rules[nextToParse] === undefined) {
-          option.parsing = nextToParse;
+          currentOption.parsing = nextToParse;
         } else {
-          option.parsing = newTentativeParseNode(nextToParse, state.current, option);
-          state.current = option.parsing;
+          currentOption.parsing = newTentativeParseNode(nextToParse, state.current, currentOption);
+          state.current = currentOption.parsing;
         }
       } else {
         state.current.currentOptionIdx++;

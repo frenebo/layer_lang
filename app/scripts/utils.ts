@@ -1,9 +1,6 @@
-import { ParseNode } from "./parser.js";
+import { ParseNode } from "./stackParser.js";
 import { Token, TokenName } from "./lexer.js";
 
-export function tokensToNodes(tokens: Token[]): ParseNode[] {
-  return tokens.map((tok) => {return {name: tok.name, definition: tok.text}});
-}
 
 type RuleObjType = { [key in TokenName]?: TokenName[][] };
 
