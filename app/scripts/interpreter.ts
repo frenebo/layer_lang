@@ -151,7 +151,11 @@ function executeAssignment(assignment: ParseNode, scope: Scope) {
 
   assignInScope(identifier_string, evaluateExpression(exp_node, scope), scope);
 
-  return evaluateExpression(assignment.contents[0] as ParseNode, scope);
+  return evalutateIdentifier(assignment.contents[0] as ParseNode, scope);
+}
+
+function evalutateIdentifier(identifier: ParseNode, scope: Scope): ExpressionValue {
+  return getValueFromScope(identifier.contents as string, scope);
 }
 
 function evaluateExpression(expression: ParseNode, scope: Scope): ExpressionValue {
@@ -166,21 +170,19 @@ function evaluateExpression(expression: ParseNode, scope: Scope): ExpressionValu
 
 function evaluateAtomWithSuffixExpression(expression: ParseNode, scope: Scope): ExpressionValue {
   if (expression.definition_name !== "atom_with_op_suffix") throw new Error("Wrong function called");
+  const operands: Array<ParseNode | ExpressionValue> = [expression.contents[0] as ParseNode];
+  const operator_suffixes: ParseNode[] = [];
+  let optional_suffix = expression.contents[1] as ParseNode;
 
-  const expressions: ExpressionValue[] = [evaluateAtom(expression.contents[0] as ParseNode, scope)];
-  const operators: ParseNode[] = [];
-
-  let op_suffix = expression.contents[1] as ParseNode;
-  while (op_suffix.definition_name === "with_stuff") {
-    const operator = op_suffix.contents[0] as ParseNode;
-    const expression = op_suffix.contents[1] as ParseNode;
-    const atom = evaluateAtom(expression.contents[0] as ParseNode, scope);
-    expressions.push(atom);
-    operators.push(operator);
-    op_suffix = expression.contents[1] as ParseNode;
+  while (optional_suffix.definition_name !== "empty") {
+    const operand_exp = optional_suffix.contents[1] as ParseNode;
+    operator_suffixes.push(optional_suffix);
+    operands.push(operand_exp.contents[0] as ParseNode);
+    optional_suffix = operand_exp.contents[1] as ParseNode;
   }
 
   const orderOfOperations: string[][] = [
+    ["func_call_op", "index_op"],
     ["asterisk", "forward_slash"],
     ["plus", "minus"],
     ["less_or_equal", "more_or_equal", "less_than", "more_than"],
@@ -190,36 +192,74 @@ function evaluateAtomWithSuffixExpression(expression: ParseNode, scope: Scope): 
   ];
 
   for (const opNames of orderOfOperations) {
-    for (let i = 0; i < operators.length; i++) {
-      if (opNames.indexOf(operators[i].definition_name!) !== -1) {
-        const [exp1, exp2] = expressions.splice(i, 2);
-        const operator = operators.splice(i, 1)[0];
-
-        const newAtom = calculateOperation(exp1, operator.definition_name!, exp2);
-        expressions.splice(i, 0, newAtom);
+    for (let i = 0; i < operator_suffixes.length; i++) {
+      if (opNames.indexOf(operator_suffixes[i].definition_name!) !== -1) {
+        const operator_suffix = operator_suffixes.splice(i, 1)[0];
+        const [operand, operator_arg] = operands.splice(i, 2);
+        const newVal = calculateOperation(operand, operator_suffix.definition_name!, operator_arg, scope);
+        operands.splice(i, 0, newVal);
+        // const operator_arg = operands[]
       }
+    }
+    for (const opName of opNames) {
+
     }
   }
 
-  if (expressions.length !== 1) throw new Error("Something went wrong");
+  // for (const opNames of orderOfOperations) {
+  //   for (let i = 0; i < operators.length; i++) {
+  //     if (opNames.indexOf(operators[i].definition_name!) !== -1) {
+  //       const [exp_node1, exp_node2] = operand_nodes.splice(i, 2);
+  //       const operator = operators.splice(i, 1)[0];
+  //
+  //       const newAtom = calculateOperation(exp_node1, operator.definition_name!, exp_node2);
+  //       operand_nodes.splice(i, 0, newAtom);
+  //     }
+  //   }
+  // }
 
-  return expressions[0];
+  if (operands.length !== 1) throw new Error("Something went wrong");
+  if (typeof (operands[0] as ExpressionValue).type !== "string") {
+    operands[0] = evaluateAtom(operands[0] as ParseNode, scope);
+  }
+
+  return (operands as ExpressionValue[])[0];
 }
 
-function calculateOperation(input_exp1: ExpressionValue, op_name: string, input_exp2: ExpressionValue) {
-  function asterisk(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+function calculateOperation(input_arg1: ExpressionValue | ParseNode, op_name: string, input_arg2: ExpressionValue | ParseNode, scope: Scope) {
+  function isExpressionVal(v: ExpressionValue | ParseNode): v is ExpressionValue {
+    return typeof (v as ExpressionValue).type === "string";
+  }
+
+  type opFunc = (i1: ExpressionValue | ParseNode, i2: ExpressionValue | ParseNode) => ExpressionValue;
+
+  const index_op: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
+    if (exp1.type !== "array" || exp2.type !== "number") throw new Error("Cannot multiply non-numbers");
+
+    return exp1.value[exp2.value];
+
+  }
+  const asterisk: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot multiply non-numbers");
 
     return {type: "number", value: exp1.value*exp2.value};
   }
 
-  function forward_slash(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const forward_slash: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot multiply non-numbers");
 
     return {type: "number", value: exp1.value/exp2.value};
   }
 
-  function plus(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const plus: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type === "number" && exp2.type === "number") {
       return {type: "number", value: exp1.value + exp2.value};
     } else if (
@@ -233,37 +273,49 @@ function calculateOperation(input_exp1: ExpressionValue, op_name: string, input_
     }
   }
 
-  function minus(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const minus: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot subtract non-numbers");
 
     return {type: "number", value: exp1.value - exp2.value};
   }
 
-  function less_or_equal(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const less_or_equal: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot compare non-number");
 
     return {type: "bool", value: exp1.value <= exp2.value};
   }
 
-  function more_or_equal(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const more_or_equal: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot compare non-number");
 
     return {type: "bool", value: exp1.value >= exp2.value};
   }
 
-  function less_than(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const less_than: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot compare non-number");
 
     return {type: "bool", value: exp1.value < exp2.value};
   }
 
-  function more_than(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const more_than: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "number" || exp2.type !== "number") throw new Error("Cannot compare non-number");
 
     return {type: "bool", value: exp1.value > exp2.value};
   }
 
-  function double_equal(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const double_equal: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (
       (exp1.type !== "number" && exp1.type !== "string" && exp1.type !== "bool") ||
       (exp2.type !== "number" && exp2.type !== "string" && exp2.type !== "bool")
@@ -274,23 +326,30 @@ function calculateOperation(input_exp1: ExpressionValue, op_name: string, input_
     }
   }
 
-  function not_equal(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const not_equal: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     return {type: "bool", value: !double_equal(exp1, exp2) };
   }
 
-  function and(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const and: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "bool" || exp2.type !== "bool") throw new Error("Cannot apply 'and' operation on non-bool");
 
     return {type: "bool", value: exp1.value && exp2.value};
   }
 
-  function or(exp1: ExpressionValue, exp2: ExpressionValue): ExpressionValue {
+  const or: opFunc = (input1, input2): ExpressionValue => {
+    const exp1 = isExpressionVal(input1) ? input1 : evaluateAtom(input1, scope);
+    const exp2 = isExpressionVal(input2) ? input2 : evaluateAtom(input2, scope);
     if (exp1.type !== "bool" || exp2.type !== "bool") throw new Error("Cannot apply 'and' operation on non-bool");
 
     return {type: "bool", value: exp1.value || exp2.value};
   }
 
-  const ops: {[key: string]: (a1: ExpressionValue, a2: ExpressionValue) => ExpressionValue} = {
+  const ops: {[key: string]: (a1: ExpressionValue | ParseNode, a2: ExpressionValue | ParseNode) => ExpressionValue} = {
+    index_op,
     asterisk,
     forward_slash,
     plus,
@@ -308,7 +367,7 @@ function calculateOperation(input_exp1: ExpressionValue, op_name: string, input_
   const get_func = ops[op_name];
   if (get_func === undefined) throw new Error(`Unimplemented operation ${op_name}`);
 
-  return get_func(input_exp1, input_exp2);
+  return get_func(input_arg1, input_arg2);
 }
 
 function getValueFromScope(name: string, scope: Scope): ExpressionValue {
@@ -337,7 +396,7 @@ function evaluateAtom(atom: ParseNode, scope: Scope): ExpressionValue {
       value: parseFloat("-" + (atom.contents[1] as ParseNode).contents as string),
     }
   } else if (atom.definition_name ===  "ident") {
-    return getValueFromScope((atom.contents[0] as ParseNode).contents as string, scope);
+    return evalutateIdentifier(atom.contents[0] as ParseNode, scope);
   } else if (atom.definition_name ===  "arr") {
     return evaluateArray(atom.contents[0] as ParseNode, scope);
   } else if (atom.definition_name ===  "paren_expression") {

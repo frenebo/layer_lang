@@ -24,7 +24,6 @@ export enum TokenName {
   forward_slash = "forward_slash",
   asterisk = "asterisk",
   operator_suffix = "operator_suffix",
-  operator = "operator",
   if_block = "if_block",
   keyword_if = "keyword_if",
   double_equals = "double_equals",
