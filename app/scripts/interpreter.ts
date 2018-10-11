@@ -58,9 +58,7 @@ function executeStatement(statement: ParseNode, scope: Scope) {
   } else if (statement.definition_name ===  "for") {
     executeForLoop(statement.contents[0] as ParseNode, scope);
   } else if (statement.definition_name ===  "expression") {
-    executeExpression(statement.contents[0] as ParseNode, scope);
-  } else if (statement.definition_name === "assignment") {
-    executeAssignment(statement.contents[0] as ParseNode, scope);
+    evaluateExpression(statement.contents[0] as ParseNode, scope);
   } else {
     throw new Error("Unsupported definition type");
   }
@@ -81,13 +79,13 @@ function executeWhileLoop(loop: ParseNode, scope: Scope) {
 
   const block = loop.contents[4] as ParseNode;
 
-  while (isTruth(executeExpression(condition_expression, scope))) {
+  while (isTruth(evaluateExpression(condition_expression, scope))) {
     executeBlock(block, scope);
   }
 }
 
 function executeIf(ifNode: ParseNode, scope: Scope) {
-  const conditionTrue: boolean = isTruth(executeExpression(ifNode.contents[2] as ParseNode, scope));
+  const conditionTrue: boolean = isTruth(evaluateExpression(ifNode.contents[2] as ParseNode, scope));
 
   if (conditionTrue) {
     executeBlock(ifNode.contents[4] as ParseNode, scope);
@@ -111,7 +109,7 @@ function executeForLoop(forNode: ParseNode, parent_scope: Scope) {
   };
 
   if (optional_init_exp.definition_name === "exp") {
-    executeStatement(optional_init_exp.contents[0] as ParseNode, scope);
+    evaluateExpression(optional_init_exp.contents[0] as ParseNode, scope);
   }
 
   let continuing = true;
@@ -119,7 +117,7 @@ function executeForLoop(forNode: ParseNode, parent_scope: Scope) {
   function shouldContinue(): boolean {
     if (optional_condition_exp.definition_name === "empty") return true;
 
-    const executeExp = executeExpression(optional_condition_exp.contents[0] as ParseNode, scope);
+    const executeExp = evaluateExpression(optional_condition_exp.contents[0] as ParseNode, scope);
 
     return isTruth(executeExp);
   }
@@ -127,7 +125,7 @@ function executeForLoop(forNode: ParseNode, parent_scope: Scope) {
   while (continuing = shouldContinue()) {
     executeBlock(if_block as ParseNode, scope);
     if (optional_increment.definition_name === "exp") {
-      executeExpression(optional_increment.contents[0] as ParseNode, scope);
+      evaluateExpression(optional_increment.contents[0] as ParseNode, scope);
     }
   }
 }
@@ -151,10 +149,24 @@ function executeAssignment(assignment: ParseNode, scope: Scope) {
   const identifier_string = (assignment.contents[0] as ParseNode).contents as string;
   const exp_node = assignment.contents[2] as ParseNode;
 
-  assignInScope(identifier_string, executeExpression(exp_node, scope), scope);
+  assignInScope(identifier_string, evaluateExpression(exp_node, scope), scope);
+
+  return evaluateExpression(assignment.contents[0] as ParseNode, scope);
 }
 
-function executeExpression(expression: ParseNode, scope: Scope): ExpressionValue {
+function evaluateExpression(expression: ParseNode, scope: Scope): ExpressionValue {
+  if (expression.definition_name === "assignment") {
+    return executeAssignment(expression.contents[0] as ParseNode, scope);
+  } else if (expression.definition_name === "atom_with_op_suffix") {
+    return evaluateAtomWithSuffixExpression(expression, scope);
+  } else {
+    throw new Error("Unsupported expression type");
+  }
+}
+
+function evaluateAtomWithSuffixExpression(expression: ParseNode, scope: Scope): ExpressionValue {
+  if (expression.definition_name !== "atom_with_op_suffix") throw new Error("Wrong function called");
+
   const expressions: ExpressionValue[] = [evaluateAtom(expression.contents[0] as ParseNode, scope)];
   const operators: ParseNode[] = [];
 
@@ -346,7 +358,7 @@ function evaluateArray(arrayNode: ParseNode, scope: Scope): ExpressionValue {
   let currentArrayBody = arrayNode.contents[1] as ParseNode;
 
   while (currentArrayBody.definition_name === "with_exp") {
-    values.push(executeExpression(currentArrayBody.contents[0] as ParseNode, scope));
+    values.push(evaluateExpression(currentArrayBody.contents[0] as ParseNode, scope));
 
     const optionalCommaAndArray = currentArrayBody.contents[1] as ParseNode;
     if (optionalCommaAndArray.definition_name === "with_comma_and_array") {

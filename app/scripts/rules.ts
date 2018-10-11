@@ -21,13 +21,13 @@ export const rules: {
     if: [TokenName.if_block],
     for: [TokenName.for_block],
     expression: [TokenName.expression, TokenName.semicolon],
-    assignment: [TokenName.assignment, TokenName.semicolon],
   },
   block: {
     default_block: [TokenName.open_brace, TokenName.statement_sequence, TokenName.close_brace],
   },
   expression: {
     atom_with_op_suffix: [TokenName.atom, TokenName.operator_suffix],
+    assignment: [TokenName.assignment],
   },
   operator_suffix: {
     with_stuff: [TokenName.operator, TokenName.expression],
@@ -58,9 +58,12 @@ export const rules: {
   for_block: {default_for: [
     TokenName.keyword_for,
     TokenName.open_parenthesis,
-    TokenName.optional_expression, TokenName.semicolon,
-    TokenName.optional_expression, TokenName.semicolon,
-    TokenName.optional_expression, TokenName.close_parenthesis,
+    TokenName.optional_expression,
+    TokenName.semicolon,
+    TokenName.optional_expression,
+    TokenName.semicolon,
+    TokenName.optional_expression,
+    TokenName.close_parenthesis,
     TokenName.block,
   ]},
   optional_expression: {
