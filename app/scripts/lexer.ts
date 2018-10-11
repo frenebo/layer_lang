@@ -52,7 +52,8 @@ export enum TokenName {
   close_bracket = "close_bracket",
   open_bracket = "open_bracket",
   keyword_false = "keyword_false",
-  keyword_true = "keyword_true"
+  keyword_true = "keyword_true",
+  literal_string = "literal_string"
 };
 
 const wordCheckRegexes: Array<[TokenName, RegExp]>= [
@@ -91,6 +92,7 @@ const wordCheckRegexes: Array<[TokenName, RegExp]>= [
   [TokenName.and_operator, /^\&\&/],
   [TokenName.identifier, /^[a-zA-Z_][a-zA-Z0-9_]*/],
   [TokenName.literal_number, /^[0-9]*\.?[0-9]+/],
+  [TokenName.literal_string, /^\"(\\.|[^"\\])*\"/],
 ];
 
 export type Token = {

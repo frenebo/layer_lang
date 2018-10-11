@@ -117,7 +117,7 @@ function executeForLoop(forNode: ParseNode, parent_scope: Scope) {
   let continuing = true;
 
   function shouldContinue(): boolean {
-    if (optional_condition_exp.definition_name = "empty") return true;
+    if (optional_condition_exp.definition_name === "empty") return true;
 
     const executeExp = executeExpression(optional_condition_exp.contents[0] as ParseNode, scope);
 
@@ -330,6 +330,12 @@ function evaluateAtom(atom: ParseNode, scope: Scope): ExpressionValue {
     return evaluateArray(atom.contents[0] as ParseNode, scope);
   } else if (atom.definition_name ===  "paren_expression") {
     return evaluateAtom(atom.contents[1] as ParseNode, scope);
+  } else if (atom.definition_name === "string") {
+    const stringWithQuotes = (atom.contents[0] as ParseNode).contents as string;
+    return {
+      type: "string",
+      value: stringWithQuotes.substring(1, stringWithQuotes.length - 1) as string,
+    };
   } else {
     throw new Error("Unimplemented");
   }

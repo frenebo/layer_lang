@@ -40,6 +40,7 @@ export const rules: {
     neg_num: [TokenName.minus_sign, TokenName.literal_number],
     ident: [TokenName.identifier],
     arr: [TokenName.array],
+    string: [TokenName.literal_string],
     paren_expression: [TokenName.open_parenthesis, TokenName.expression, TokenName.close_parenthesis],
   },
   array: {
