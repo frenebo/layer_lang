@@ -36,10 +36,6 @@ export enum TokenName {
   more_than_or_equal_to_symbol = "more_than_or_equal_to_symbol",
   less_than_symbol = "less_than_symbol",
   more_than_symbol = "more_than_symbol",
-  // plus_equals = "plus_equals",
-  // minus_equals = "minus_equals",
-  // times_equals = "times_equals",
-  // divide_equals = "divide_equals",
   assign_symbol = "assign_symbol",
   optional_expression = "optional_expression",
   keyword_for = "keyword_for",
@@ -82,10 +78,6 @@ const wordCheckRegexes: Array<[TokenName, RegExp]>= [
   [TokenName.less_than_symbol, /^\</],
   [TokenName.more_than_or_equal_to_symbol, /^\>\=/],
   [TokenName.less_than_or_equal_to_symbol, /^\<=/],
-  // [TokenName.plus_equals, /^\+\=/],
-  // [TokenName.minus_equals, /^\-\=/],
-  // [TokenName.times_equals, /^\*\=/],
-  // [TokenName.divide_equals, /^\/\=/],
   [TokenName.not_equals, /^\!\=/],
   [TokenName.or_operator, /^\|\|/],
   [TokenName.and_operator, /^\&\&/],
@@ -110,7 +102,7 @@ export function lex(text: string): Token[] {
     let match: null | Token = null;
     for (const [name, regex] of wordCheckRegexes) {
       const exec = regex.exec(remainingText);
-      // If exec finds a mtch:
+      // If exec finds a match:
       //   - if match is still null, set match to exec's value.
       //   - if match is not null, only overwrite match if exec finds a match longer than the old match.
       //     If they are the same length, do not overwrite.
@@ -128,14 +120,3 @@ export function lex(text: string): Token[] {
 
   return tokens
 }
-
-// function lexWord(text: string): WordName | null {
-//   const matches: WordName[] = [];
-//   for (const wordName in wordCheckRegexes) {
-//     const match = wordCheckRegexes[wordName as WordName]!.exec(text);
-//   }
-//
-//   if (matches.length === 0) return null;
-//   if (matches.length === 1) return matches[0];
-//   else throw new Error("Multiple matches");
-// }
